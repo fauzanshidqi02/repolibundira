@@ -1,0 +1,20 @@
+export const mockData = [
+  {
+    id: 1,
+    nim: "41119001",
+    nama: "Budi Santoso",
+    judul: "Analisis Sentimen Pengguna Twitter terhadap Pemilu 2024 menggunakan Algoritma Naive Bayes",
+    pengarang: "Budi Santoso",
+    pernyataan: "Dibuat sendiri dan belum pernah dipublikasikan",
+    gmd: "Teks (Skripsi/Tugas Akhir)",
+    tahun: "2024",
+    kampus: "Kampus Tanjung Duren",
+    subjek: "Teknik Informatika",
+    bahasa: "Indonesia",
+    halamanJudul: "#",
+    fullPdf: "#",
+    abstrak: "#",
+    bab1: "#",
+    daftarPustaka: "#",
+  },
+];

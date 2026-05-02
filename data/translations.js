@@ -1,0 +1,223 @@
+export const translations = {
+  id: {
+    title: "Repository Perpustakaan",
+    subtitle: "Universitas Dian Nusantara",
+    badge: "Google Sheet Aktif",
+    heroTitle: "Temukan Koleksi Tugas Akhir Mahasiswa dengan Cepat",
+    heroDesc:
+      "Cari judul, nama, NIM, program studi, atau tahun terbit dalam tampilan yang nyaman di desktop maupun mobile.",
+    searchPlaceholder:
+      "Masukkan kata kunci judul, nama, NIM, prodi, atau tahun...",
+    darkMode: "Mode Gelap",
+    lightMode: "Mode Terang",
+    language: "Ganti Bahasa",
+    noResults: "Tidak ada data yang ditemukan.",
+    details: "Detail Tugas Akhir",
+    close: "Tutup",
+    subjectTitle: "Telusuri Subjek",
+    collectionTitle: "Koleksi Terbaru dan Diperbarui",
+    collectionDesc:
+      "Daftar koleksi terbaru yang tersedia di repository.",
+    more: "Lainnya",
+    less: "Lebih Sedikit",
+    advancedSearch: "Pencarian Spesifik",
+    applyFilter: "Terapkan",
+    resetFilter: "Reset Filter",
+
+    fields: {
+      nim: "NIM",
+      nama: "Nama Mahasiswa",
+      judul: "Judul Tugas Akhir",
+      pengarang: "Pengarang",
+      pernyataan: "Pernyataan Tanggung Jawab",
+      dosenPembimbing: "Dosen Pembimbing",
+      tahun: "Tahun",
+      kampus: "Lokasi Kampus",
+      subjek: "Subjek",
+      bahasa: "Bahasa",
+      oaiBaseUrl: "OAI Base URL",
+    },
+
+    actions: {
+      viewCover: "Text (Hal Cover)",
+      viewAbstrak: "Text (Abstrak)",
+      viewBab1: "Text (BAB 1)",
+      viewPustaka: "Text (Daftar Pustaka)",
+      viewFullPdf: "Text (Full Text)",
+      viewOaiBaseUrl: "Buka OAI Base URL",
+    },
+
+    subjectsList: {
+      akuntansi: "Akuntansi",
+      manajemen: "Manajemen",
+      komunikasi: "Ilmu Komunikasi",
+      sastra: "Sastra Inggris",
+      informatika: "Teknik Informatika",
+      elektro: "Teknik Elektro",
+      mesin: "Teknik Mesin",
+      sipil: "Teknik Sipil",
+    },
+
+    ui: {
+      searchCollection: "Cari Koleksi",
+      backHome: "Kembali ke Beranda",
+      searchAgain: "Cari lagi...",
+      searchBtn: "Cari",
+      searchResults: "Hasil Pencarian",
+      found: "Ditemukan",
+      collections: "koleksi",
+      forKeyword: "untuk kata kunci",
+      onSubject: "pada subjek",
+      withFilter: "(dengan filter spesifik)",
+      yearFilter: "Tahun:",
+      allYears: "Semua Tahun",
+
+      supervisorFilter: "Dosen:",
+      supervisorSearchPlaceholder: "Cari dosen pembimbing...",
+      supervisorActiveLabel: "Dosen Pembimbing:",
+      clearSupervisorFilter: "Hapus filter dosen",
+
+      studyProgramExplore: "Eksplorasi Program Studi",
+      subjectDesc: "Jelajahi koleksi tugas akhir sesuai program studi.",
+      subjectCardDescPrefix:
+        "Jelajahi karya ilmiah dan tugas akhir pada bidang",
+      showLessSubjects: "Tampilkan lebih sedikit subjek.",
+      showMoreSubjects:
+        "Tampilkan lebih banyak subjek untuk memperluas penelusuran koleksi.",
+      hideSubjects: "Sembunyikan subjek",
+      showAllSubjects: "Lihat semua subjek",
+      viewCollection: "Lihat Koleksi",
+      subjectLabel: "Subjek",
+
+      tryOther:
+        "Coba gunakan kata kunci lain atau periksa filter pencarian spesifik Anda.",
+      clearSearch: "Hapus Pencarian & Filter",
+      emptyData: "Dokumen Belum Tersedia",
+      loading: "Memuat data repository...",
+      availableDocuments: "Dokumen Tersedia",
+
+      statsSubject: "Statistik Subjek",
+      totalCollectionsBySubject: "Total Koleksi per Subjek",
+      statsSubjectDesc:
+        "Ringkasan jumlah koleksi berdasarkan program studi dalam bentuk grafik.",
+      viewAllStats: "Lihat Semua Statistik",
+      totalCollection: "Total Koleksi",
+      totalSubject: "Total Subjek",
+      completeStats: "Statistik Lengkap",
+      allRepositorySubjects: "Semua Subjek Repository",
+      ranking: "Peringkat",
+      availableCollection: "koleksi",
+    },
+  },
+
+  en: {
+    title: "Library Repository",
+    subtitle: "Dian Nusantara University",
+    badge: "Google Sheet Active",
+    heroTitle: "Find Student Final Project Collections Quickly",
+    heroDesc:
+      "Search by title, student name, student ID, study program, or publication year in a comfortable desktop and mobile interface.",
+    searchPlaceholder:
+      "Enter title, name, student ID, study program, or year...",
+    darkMode: "Dark Mode",
+    lightMode: "Light Mode",
+    language: "Switch Language",
+    noResults: "No collections found.",
+    details: "Final Project Details",
+    close: "Close",
+    subjectTitle: "Browse Subjects",
+    collectionTitle: "New and Updated Collections",
+    collectionDesc:
+      "Latest collections available in the repository.",
+    more: "More",
+    less: "Less",
+    advancedSearch: "Advanced Search",
+    applyFilter: "Apply",
+    resetFilter: "Reset",
+
+    fields: {
+      nim: "Student ID (NIM)",
+      nama: "Student Name",
+      judul: "Final Project Title",
+      pengarang: "Author",
+      pernyataan: "Statement of Responsibility",
+      dosenPembimbing: "Supervisor",
+      tahun: "Year",
+      kampus: "Campus Location",
+      subjek: "Subject",
+      bahasa: "Language",
+      oaiBaseUrl: "OAI Base URL",
+    },
+
+    actions: {
+      viewCover: "Text (Cover Page)",
+      viewAbstrak: "Text (Abstract)",
+      viewBab1: "Text (Chapter 1)",
+      viewPustaka: "Text (Bibliography)",
+      viewFullPdf: "Text (Full Text)",
+      viewOaiBaseUrl: "Open OAI Base URL",
+    },
+
+    subjectsList: {
+      akuntansi: "Accounting",
+      manajemen: "Management",
+      komunikasi: "Communication Studies",
+      sastra: "English Literature",
+      informatika: "Informatics Engineering",
+      elektro: "Electrical Engineering",
+      mesin: "Mechanical Engineering",
+      sipil: "Civil Engineering",
+    },
+
+    ui: {
+      searchCollection: "Search Collections",
+      backHome: "Back to Home",
+      searchAgain: "Search again...",
+      searchBtn: "Search",
+      searchResults: "Search Results",
+      found: "Found",
+      collections: "collections",
+      forKeyword: "for keyword",
+      onSubject: "on subject",
+      withFilter: "(with specific filters)",
+      yearFilter: "Year:",
+      allYears: "All Years",
+
+      supervisorFilter: "Supervisor:",
+      supervisorSearchPlaceholder: "Search supervisor...",
+      supervisorActiveLabel: "Supervisor:",
+      clearSupervisorFilter: "Clear supervisor filter",
+
+      studyProgramExplore: "Study Program Exploration",
+      subjectDesc: "Browse final project collections by study program.",
+      subjectCardDescPrefix: "Browse scientific works and final projects in",
+      showLessSubjects: "Show fewer subjects.",
+      showMoreSubjects: "Show more subjects to expand collection browsing.",
+      hideSubjects: "Hide subjects",
+      showAllSubjects: "View all subjects",
+      viewCollection: "View Collections",
+      subjectLabel: "Subject",
+
+      tryOther:
+        "Try using different keywords or check your advanced search filters.",
+      clearSearch: "Clear Search & Filters",
+      emptyData: "Document Not Available",
+      loading: "Loading repository data...",
+      availableDocuments: "Available Documents",
+
+      statsSubject: "Subject Statistics",
+      totalCollectionsBySubject: "Total Collections by Subject",
+      statsSubjectDesc:
+        "A summary of collection totals by study program in chart format.",
+      viewAllStats: "View All Statistics",
+      totalCollection: "Total Collections",
+      totalSubject: "Total Subjects",
+      completeStats: "Complete Statistics",
+      allRepositorySubjects: "All Repository Subjects",
+      ranking: "Rank",
+      availableCollection: "collections",
+    },
+  },
+};
+
+export default translations;
