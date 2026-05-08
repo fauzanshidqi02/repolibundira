@@ -16,8 +16,9 @@ import { translations } from "@/data/translations";
 import { fetchRepositoryData } from "@/lib/repositoryApi";
 
 import Navbar from "./Navbar";
-// import SecurityGuard from "./SecurityGuard";
+import SecurityGuard from "./SecurityGuard";
 import GuidedTour from "./GuidedTour";
+import PrivacyConsent from "./PrivacyConsent";
 import SplashScreen from "./SplashScreen";
 import HeroSection from "./HeroSection";
 import SubjectBrowser from "./SubjectBrowser";
@@ -35,6 +36,7 @@ export default function RepositoryApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tourFinished, setTourFinished] = useState(false);
 
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState("Semua");
@@ -397,9 +399,9 @@ export default function RepositoryApp() {
         t={t}
       />
 
-      {!showSplash && <GuidedTour />}
+      {!showSplash && <GuidedTour onFinish={() => setTourFinished(true)} />}
 
-      {/* <SecurityGuard /> */}
+      <SecurityGuard />
 
       <div className="pt-16 md:pt-20">
         {!isSearchPage ? (
@@ -473,6 +475,8 @@ export default function RepositoryApp() {
           t={t}
         />
       )}
+
+      {!showSplash && tourFinished && <PrivacyConsent />}
 
       <Footer />
     </div>

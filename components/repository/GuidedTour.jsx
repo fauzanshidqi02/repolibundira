@@ -33,7 +33,7 @@ const steps = [
   },
 ];
 
-export default function GuidedTour() {
+export default function GuidedTour({ onFinish = () => {} }) {
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState(null);
@@ -50,16 +50,19 @@ export default function GuidedTour() {
 
     const hasSeenTour = window.localStorage.getItem(TOUR_STORAGE_KEY);
 
-    if (hasSeenTour) return;
+    if (hasSeenTour) {
+      onFinish();
+      return;
+    }
 
     const timer = setTimeout(() => {
       setStepIndex(0);
       setActive(true);
       window.localStorage.setItem(TOUR_STORAGE_KEY, "true");
-    }, 1800);
+    }, 800);
 
     return () => clearTimeout(timer);
-  }, [mounted]);
+  }, [mounted, onFinish]);
 
   useEffect(() => {
     if (!active) return;
@@ -107,10 +110,7 @@ export default function GuidedTour() {
 
   const tooltipPosition = useMemo(() => {
     if (typeof window === "undefined") {
-      return {
-        top: 120,
-        left: 16,
-      };
+      return { top: 120, left: 16 };
     }
 
     const tooltipWidth = 380;
@@ -119,10 +119,7 @@ export default function GuidedTour() {
     const safeTop = 80;
 
     if (!rect) {
-      return {
-        top: 120,
-        left: margin,
-      };
+      return { top: 120, left: margin };
     }
 
     const spaceBelow = window.innerHeight - rect.bottom;
@@ -150,18 +147,12 @@ export default function GuidedTour() {
       window.innerWidth - tooltipWidth - margin
     );
 
-    return {
-      top,
-      left,
-    };
+    return { top, left };
   }, [rect]);
 
   const labelPosition = useMemo(() => {
     if (typeof window === "undefined" || !rect) {
-      return {
-        top: 100,
-        left: 16,
-      };
+      return { top: 100, left: 16 };
     }
 
     const top =
@@ -171,10 +162,7 @@ export default function GuidedTour() {
 
     const left = Math.min(Math.max(rect.left + 8, 16), window.innerWidth - 150);
 
-    return {
-      top,
-      left,
-    };
+    return { top, left };
   }, [rect]);
 
   function nextStep() {
@@ -188,7 +176,6 @@ export default function GuidedTour() {
 
   function prevStep() {
     if (stepIndex === 0) return;
-
     setStepIndex((prev) => prev - 1);
   }
 
@@ -201,24 +188,13 @@ export default function GuidedTour() {
     setActive(false);
     setStepIndex(0);
     setRect(null);
+    onFinish();
   }
 
   if (!mounted) return null;
 
   return (
     <>
-      {/*{!active && (
-        <button
-          type="button"
-          onClick={startTour}
-          className="fixed bottom-5 right-5 z-[70] flex h-16 w-16 items-center justify-center rounded-full bg-blue-700 text-white shadow-2xl shadow-blue-700/30 transition hover:-translate-y-1 hover:bg-blue-800"
-          aria-label="Mulai panduan"
-        >
-          <Bot className="h-8 w-8" />
-          <span className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-emerald-500 ring-4 ring-white dark:ring-slate-950" />
-        </button>
-      )}*/}
-
       {active && (
         <div className="fixed inset-0 z-[999]">
           <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-[2px]" />
