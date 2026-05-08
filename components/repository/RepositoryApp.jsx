@@ -16,7 +16,7 @@ import { translations } from "@/data/translations";
 import { fetchRepositoryData } from "@/lib/repositoryApi";
 
 import Navbar from "./Navbar";
-import SecurityGuard from "./SecurityGuard";
+// import SecurityGuard from "./SecurityGuard";
 import SplashScreen from "./SplashScreen";
 import HeroSection from "./HeroSection";
 import SubjectBrowser from "./SubjectBrowser";
@@ -27,6 +27,7 @@ import DetailModal from "./DetailModal";
 import Footer from "./Footer";
 
 const ITEMS_PER_PAGE = 10;
+const AUTO_REFRESH_INTERVAL = 30000;
 
 export default function RepositoryApp() {
   const [lang, setLang] = useState("id");
@@ -109,24 +110,32 @@ export default function RepositoryApp() {
   useEffect(() => {
     let active = true;
 
-    fetchRepositoryData()
-      .then((items) => {
+    const loadData = async () => {
+      try {
+        const items = await fetchRepositoryData();
+
         if (!active) return;
 
         setData(Array.isArray(items) ? items : []);
         setLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.warn("Gagal mengambil data repository:", error);
 
         if (!active) return;
 
-        setData([]);
         setLoading(false);
-      });
+      }
+    };
+
+    loadData();
+
+    const interval = setInterval(() => {
+      loadData();
+    }, AUTO_REFRESH_INTERVAL);
 
     return () => {
       active = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -387,7 +396,7 @@ export default function RepositoryApp() {
         t={t}
       />
 
-      <SecurityGuard />
+      {/* <SecurityGuard /> */}
 
       <div className="pt-16 md:pt-20">
         {!isSearchPage ? (
