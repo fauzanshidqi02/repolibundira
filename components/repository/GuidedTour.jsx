@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bot, X, ChevronLeft, ChevronRight, MousePointer2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, MousePointer2 } from "lucide-react";
 
 const TOUR_STORAGE_KEY = "repolib-tour-seen";
 
@@ -38,11 +38,23 @@ export default function GuidedTour({ onFinish = () => {} }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const currentStep = steps[stepIndex];
 
   useEffect(() => {
     setMounted(true);
+
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+    };
   }, []);
 
   useEffect(() => {
@@ -55,13 +67,15 @@ export default function GuidedTour({ onFinish = () => {} }) {
       return;
     }
 
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setStepIndex(0);
       setActive(true);
       window.localStorage.setItem(TOUR_STORAGE_KEY, "true");
     }, 800);
 
-    return () => clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [mounted, onFinish]);
 
   useEffect(() => {
@@ -79,11 +93,11 @@ export default function GuidedTour({ onFinish = () => {} }) {
 
       element.scrollIntoView({
         behavior: "smooth",
-        block: "center",
+        block: isMobile ? "start" : "center",
         inline: "center",
       });
 
-      setTimeout(() => {
+      window.setTimeout(() => {
         const box = element.getBoundingClientRect();
 
         setRect({
@@ -106,11 +120,14 @@ export default function GuidedTour({ onFinish = () => {} }) {
       window.removeEventListener("resize", updateRect);
       window.removeEventListener("scroll", updateRect, true);
     };
-  }, [active, stepIndex, currentStep.target]);
+  }, [active, stepIndex, currentStep.target, isMobile]);
 
   const tooltipPosition = useMemo(() => {
-    if (typeof window === "undefined") {
-      return { top: 120, left: 16 };
+    if (!mounted || typeof window === "undefined") {
+      return {
+        top: 120,
+        left: 16,
+      };
     }
 
     const tooltipWidth = 380;
@@ -119,13 +136,16 @@ export default function GuidedTour({ onFinish = () => {} }) {
     const safeTop = 80;
 
     if (!rect) {
-      return { top: 120, left: margin };
+      return {
+        top: 120,
+        left: margin,
+      };
     }
 
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
 
-    let top;
+    let top = rect.bottom + 24;
 
     if (spaceBelow >= tooltipHeight + 40) {
       top = rect.bottom + 24;
@@ -140,19 +160,23 @@ export default function GuidedTour({ onFinish = () => {} }) {
       window.innerHeight - tooltipHeight - margin
     );
 
-    let left = rect.left;
-
-    left = Math.min(
-      Math.max(left, margin),
+    const left = Math.min(
+      Math.max(rect.left, margin),
       window.innerWidth - tooltipWidth - margin
     );
 
-    return { top, left };
-  }, [rect]);
+    return {
+      top,
+      left,
+    };
+  }, [mounted, rect]);
 
   const labelPosition = useMemo(() => {
-    if (typeof window === "undefined" || !rect) {
-      return { top: 100, left: 16 };
+    if (!mounted || typeof window === "undefined" || !rect) {
+      return {
+        top: 100,
+        left: 16,
+      };
     }
 
     const top =
@@ -162,8 +186,29 @@ export default function GuidedTour({ onFinish = () => {} }) {
 
     const left = Math.min(Math.max(rect.left + 8, 16), window.innerWidth - 150);
 
-    return { top, left };
-  }, [rect]);
+    return {
+      top,
+      left,
+    };
+  }, [mounted, rect]);
+
+  const highlightStyle = useMemo(() => {
+    if (!mounted || typeof window === "undefined" || !rect) {
+      return {
+        top: 80,
+        left: 8,
+        width: 200,
+        height: 80,
+      };
+    }
+
+    return {
+      top: Math.max(rect.top - 10, 72),
+      left: Math.max(rect.left - 10, 8),
+      width: Math.min(rect.width + 20, window.innerWidth - 16),
+      height: rect.height + 20,
+    };
+  }, [mounted, rect]);
 
   function nextStep() {
     if (stepIndex + 1 >= steps.length) {
@@ -176,12 +221,8 @@ export default function GuidedTour({ onFinish = () => {} }) {
 
   function prevStep() {
     if (stepIndex === 0) return;
-    setStepIndex((prev) => prev - 1);
-  }
 
-  function startTour() {
-    setStepIndex(0);
-    setActive(true);
+    setStepIndex((prev) => prev - 1);
   }
 
   function closeTour() {
@@ -202,35 +243,44 @@ export default function GuidedTour({ onFinish = () => {} }) {
           {rect && (
             <>
               <div
-                className="absolute z-[1000] rounded-[28px] border-4 border-blue-400 bg-transparent shadow-[0_0_0_9999px_rgba(2,6,23,0.65),0_0_45px_rgba(59,130,246,1)] transition-all duration-300"
-                style={{
-                  top: rect.top - 12,
-                  left: rect.left - 12,
-                  width: rect.width + 24,
-                  height: rect.height + 24,
-                }}
+                className="absolute z-[1000] rounded-[24px] border-4 border-blue-400 bg-transparent shadow-[0_0_0_9999px_rgba(2,6,23,0.65),0_0_45px_rgba(59,130,246,1)] transition-all duration-300"
+                style={highlightStyle}
               />
 
-              <div
-                className="absolute z-[1001] flex items-center gap-2 rounded-full bg-blue-700 px-4 py-2 text-xs font-black text-white shadow-2xl"
-                style={{
-                  top: labelPosition.top,
-                  left: labelPosition.left,
-                }}
-              >
-                <MousePointer2 className="h-4 w-4" />
-                Bagian ini
-              </div>
+              {!isMobile && (
+                <div
+                  className="absolute z-[1001] flex items-center gap-2 rounded-full bg-blue-700 px-4 py-2 text-xs font-black text-white shadow-2xl"
+                  style={{
+                    top: labelPosition.top,
+                    left: labelPosition.left,
+                  }}
+                >
+                  <MousePointer2 className="h-4 w-4" />
+                  Bagian ini
+                </div>
+              )}
             </>
           )}
 
           <div
-            className="absolute z-[1002] w-[calc(100vw-2rem)] max-w-sm rounded-[28px] border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-slate-950"
-            style={{
-              top: tooltipPosition.top,
-              left: tooltipPosition.left,
-            }}
+            className={
+              isMobile
+                ? "fixed bottom-0 left-0 right-0 z-[1002] rounded-t-[30px] border-t border-white/10 bg-white p-5 shadow-2xl dark:bg-slate-950"
+                : "absolute z-[1002] w-[calc(100vw-2rem)] max-w-sm rounded-[28px] border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-slate-950"
+            }
+            style={
+              isMobile
+                ? undefined
+                : {
+                    top: tooltipPosition.top,
+                    left: tooltipPosition.left,
+                  }
+            }
           >
+            {isMobile && (
+              <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-slate-300 dark:bg-white/20" />
+            )}
+
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">
@@ -290,18 +340,6 @@ export default function GuidedTour({ onFinish = () => {} }) {
                 </button>
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                window.localStorage.removeItem(TOUR_STORAGE_KEY);
-                setStepIndex(0);
-                setActive(true);
-              }}
-              className="mt-4 text-xs font-bold text-slate-400 transition hover:text-blue-700 dark:hover:text-blue-300"
-            >
-              Ulangi panduan nanti
-            </button>
           </div>
         </div>
       )}
