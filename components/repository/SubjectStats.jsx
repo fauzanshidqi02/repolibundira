@@ -38,11 +38,7 @@ const subjectColors = {
   "Teknik Sipil": "from-cyan-500 to-teal-600",
 };
 
-export default function SubjectStats({
-  t,
-  data = [],
-  subjects = [],
-}) {
+export default function SubjectStats({ t, data = [], subjects = [] }) {
   const [showModal, setShowModal] = useState(false);
 
   const stats = useMemo(() => {
@@ -66,7 +62,10 @@ export default function SubjectStats({
 
   return (
     <>
-      <section className="relative mt-10 overflow-hidden rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70 dark:border-white/10 dark:bg-slate-950 dark:shadow-[0_20px_80px_rgba(0,0,0,0.35)] md:p-8">
+      <section
+        data-tour="stats"
+        className="relative mt-10 overflow-hidden rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70 dark:border-white/10 dark:bg-slate-950 dark:shadow-[0_20px_80px_rgba(0,0,0,0.35)] md:p-8"
+      >
         <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl" />
 
@@ -74,22 +73,28 @@ export default function SubjectStats({
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-300 md:text-[11px]">
               <BarChart3 className="h-3.5 w-3.5" />
-              Statistik Subjek
+              {t?.ui?.statsSubject || "Statistik Subjek"}
             </span>
 
             <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950 dark:text-white md:text-4xl">
-              Total Koleksi per Subjek
+              {t?.ui?.totalCollectionsBySubject || "Total Koleksi per Subjek"}
             </h2>
 
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-400 md:text-base">
-              Ringkasan jumlah koleksi berdasarkan program studi dalam bentuk
-              grafik. Klik tombol lihat semua untuk membuka statistik lengkap.
+              {t?.ui?.statsSubjectDesc ||
+                "Ringkasan jumlah koleksi berdasarkan program studi dalam bentuk grafik."}
             </p>
           </div>
 
           <div className="grid w-full grid-cols-2 gap-3 md:w-auto">
-            <SummaryBox label="Total Koleksi" value={totalCollections} />
-            <SummaryBox label="Total Subjek" value={stats.length} />
+            <SummaryBox
+              label={t?.ui?.totalCollection || "Total Koleksi"}
+              value={totalCollections}
+            />
+            <SummaryBox
+              label={t?.ui?.totalSubject || "Total Subjek"}
+              value={stats.length}
+            />
           </div>
         </div>
 
@@ -100,6 +105,7 @@ export default function SubjectStats({
               subject={subject}
               index={index}
               maxValue={maxValue}
+              t={t}
             />
           ))}
         </div>
@@ -111,7 +117,7 @@ export default function SubjectStats({
             className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-700 px-6 py-3 text-sm font-black text-white shadow-xl shadow-blue-700/20 transition hover:-translate-y-0.5 hover:bg-blue-800"
           >
             <Layers className="h-4 w-4" />
-            <span>Lihat Semua Statistik</span>
+            <span>{t?.ui?.viewAllStats || "Lihat Semua Statistik"}</span>
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -123,6 +129,7 @@ export default function SubjectStats({
           maxValue={maxValue}
           totalCollections={totalCollections}
           onClose={() => setShowModal(false)}
+          t={t}
         />
       )}
     </>
@@ -142,7 +149,7 @@ function SummaryBox({ label, value }) {
   );
 }
 
-function SubjectBar({ subject, index, maxValue }) {
+function SubjectBar({ subject, index, maxValue, t }) {
   const Icon = subjectIcons[subject.value] || BarChart3;
   const gradient =
     subjectColors[subject.value] || "from-blue-500 to-indigo-600";
@@ -160,7 +167,7 @@ function SubjectBar({ subject, index, maxValue }) {
 
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-              Subjek
+              {t?.ui?.subjectLabel || "Subjek"}
             </p>
             <h3 className="truncate text-lg font-black text-slate-950 dark:text-white md:text-xl">
               {subject.name}
@@ -173,7 +180,7 @@ function SubjectBar({ subject, index, maxValue }) {
             {subject.total}
           </p>
           <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">
-            koleksi
+            {t?.ui?.availableCollection || "koleksi"}
           </p>
         </div>
       </div>
@@ -186,13 +193,13 @@ function SubjectBar({ subject, index, maxValue }) {
       </div>
 
       <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-        Peringkat #{index + 1}
+        {t?.ui?.ranking || "Peringkat"} #{index + 1}
       </p>
     </div>
   );
 }
 
-function StatsModal({ stats, maxValue, totalCollections, onClose }) {
+function StatsModal({ stats, maxValue, totalCollections, onClose, t }) {
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-950">
@@ -200,15 +207,15 @@ function StatsModal({ stats, maxValue, totalCollections, onClose }) {
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-300">
               <BarChart3 className="h-3.5 w-3.5" />
-              Statistik Lengkap
+              {t?.ui?.completeStats || "Statistik Lengkap"}
             </p>
 
             <h3 className="mt-3 text-2xl font-black text-slate-950 dark:text-white md:text-3xl">
-              Semua Subjek Repository
+              {t?.ui?.allRepositorySubjects || "Semua Subjek Repository"}
             </h3>
 
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Total {totalCollections} koleksi dari {stats.length} subjek.
+              {t?.ui?.totalCollection || "Total Koleksi"} {totalCollections}
             </p>
           </div>
 
@@ -216,7 +223,7 @@ function StatsModal({ stats, maxValue, totalCollections, onClose }) {
             type="button"
             onClick={onClose}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
-            aria-label="Tutup"
+            aria-label={t?.close || "Tutup"}
           >
             <X className="h-6 w-6" />
           </button>
@@ -230,6 +237,7 @@ function StatsModal({ stats, maxValue, totalCollections, onClose }) {
                 subject={subject}
                 index={index}
                 maxValue={maxValue}
+                t={t}
               />
             ))}
           </div>

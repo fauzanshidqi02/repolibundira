@@ -17,6 +17,7 @@ import { fetchRepositoryData } from "@/lib/repositoryApi";
 
 import Navbar from "./Navbar";
 // import SecurityGuard from "./SecurityGuard";
+import GuidedTour from "./GuidedTour";
 import SplashScreen from "./SplashScreen";
 import HeroSection from "./HeroSection";
 import SubjectBrowser from "./SubjectBrowser";
@@ -396,6 +397,8 @@ export default function RepositoryApp() {
         t={t}
       />
 
+      {!showSplash && <GuidedTour />}
+
       {/* <SecurityGuard /> */}
 
       <div className="pt-16 md:pt-20">
@@ -431,12 +434,7 @@ export default function RepositoryApp() {
                 onSelectItem={setSelectedItem}
               />
 
-              <SubjectStats
-                t={t}
-                data={data}
-                subjects={subjects}
-                onSelectSubject={handleSubjectSelect}
-              />
+              <SubjectStats t={t} data={data} subjects={subjects} />
             </main>
           </>
         ) : (

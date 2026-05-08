@@ -93,7 +93,7 @@ export const translations = {
         "Coba gunakan kata kunci lain atau periksa filter pencarian spesifik Anda.",
       clearSearch: "Hapus Pencarian & Filter",
       emptyData: "Dokumen Belum Tersedia",
-      loading: "Memuat data repository...",
+      loading: "",
       availableDocuments: "Dokumen Tersedia",
 
       statsSubject: "Statistik Subjek",
