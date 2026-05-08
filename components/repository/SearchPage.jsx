@@ -1,28 +1,56 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   ArrowLeft,
-  Calendar,
   Search,
   SlidersHorizontal,
-  UserRound,
-  X,
+  Calendar,
+  User,
 } from "lucide-react";
 
 import AdvancedSearchPanel from "./AdvancedSearchPanel";
 import CollectionCard from "./CollectionCard";
-import Pagination from "./Pagination";
+import SlimsResultBox from "./SlimsResultBox";
+
+function getPaginationItems(currentPage, totalPages) {
+  const pages = [];
+
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  pages.push(1);
+
+  if (currentPage > 4) {
+    pages.push("...");
+  }
+
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  for (let page = start; page <= end; page++) {
+    pages.push(page);
+  }
+
+  if (currentPage < totalPages - 3) {
+    pages.push("...");
+  }
+
+  pages.push(totalPages);
+
+  return pages;
+}
 
 export default function SearchPage({
   t,
-  subjects = [],
   searchQuery = "",
   setSearchQuery = () => {},
   advSearch = {
     nama: "",
     nim: "",
-    pengarang: "",
     tahun: "",
+    dosenPembimbing: "",
   },
   setAdvSearch = () => {},
   isAdvSearchOpen = false,
@@ -43,259 +71,229 @@ export default function SearchPage({
   onPageChange = () => {},
   onSelectItem = () => {},
 }) {
-  const safeAdvSearch = {
-    nama: advSearch?.nama || "",
-    nim: advSearch?.nim || "",
-    pengarang: advSearch?.pengarang || "",
-    tahun: advSearch?.tahun || "",
-  };
+  const slimsKeyword = useMemo(() => {
+    if (searchQuery?.trim()) return searchQuery.trim();
+    if (selectedSubject && selectedSubject !== "Semua") return selectedSubject;
+    if (advSearch?.nama?.trim()) return advSearch.nama.trim();
+    if (advSearch?.nim?.trim()) return advSearch.nim.trim();
+    if (advSearch?.tahun?.trim()) return advSearch.tahun.trim();
+    if (advSearch?.dosenPembimbing?.trim()) {
+      return advSearch.dosenPembimbing.trim();
+    }
 
-  const hasAdvancedFilter =
-    safeAdvSearch.nama ||
-    safeAdvSearch.nim ||
-    safeAdvSearch.pengarang ||
-    safeAdvSearch.tahun;
+    return "";
+  }, [searchQuery, selectedSubject, advSearch]);
 
-  const selectedSubjectName =
-    subjects.find((subject) => subject.value === selectedSubject)?.name ||
-    selectedSubject;
+  const slimsUrl = useMemo(() => {
+    return `https://digilib.undira.ac.id/slims/index.php?keywords=${encodeURIComponent(
+      slimsKeyword
+    )}&search=search`;
+  }, [slimsKeyword]);
 
-  const yearOptions = Array.isArray(availableYears)
-    ? availableYears.filter(Boolean)
-    : [];
+  const paginationItems = useMemo(
+    () => getPaginationItems(currentPage, totalPages),
+    [currentPage, totalPages]
+  );
 
-  const supervisorInputValue =
-    selectedSupervisor && selectedSupervisor !== "Semua"
-      ? selectedSupervisor
-      : "";
+  const total = Array.isArray(filteredData) ? filteredData.length : 0;
 
   return (
-    <div className="min-h-[75vh] bg-slate-50 py-10 dark:bg-slate-950 md:py-14">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Top Bar */}
-        <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 dark:bg-slate-950 dark:text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <button
             type="button"
             onClick={handleBackToHome}
-            className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:text-blue-300 dark:hover:bg-white/10"
+            className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-blue-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50 dark:border-white/10 dark:bg-white/5 dark:text-blue-300 dark:hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
             {t?.ui?.backHome || "Kembali ke Beranda"}
           </button>
 
-          <div className="relative w-full md:max-w-xl">
-            <form
-              onSubmit={handleSearchSubmit}
-              className="relative z-20 overflow-hidden rounded-3xl border border-slate-200 bg-white p-1.5 shadow-md transition focus-within:ring-2 focus-within:ring-blue-300 dark:border-white/10 dark:bg-slate-900 md:rounded-full"
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex w-full max-w-2xl overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-md dark:border-white/10 dark:bg-white/5"
+          >
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder={t?.ui?.searchAgain || "Cari lagi..."}
+                className="h-14 w-full border-0 bg-transparent pl-13 pr-4 text-sm font-semibold text-slate-950 outline-none placeholder:text-slate-400 focus:ring-0 dark:text-white"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsAdvSearchOpen(!isAdvSearchOpen)}
+              className="hidden items-center justify-center px-4 text-slate-500 transition hover:text-blue-700 dark:text-slate-300 dark:hover:text-blue-300 sm:flex"
+              aria-label={t?.advancedSearch || "Pencarian Spesifik"}
             >
-              <div className="flex flex-col sm:flex-row">
-                <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <SlidersHorizontal className="h-5 w-5" />
+            </button>
 
-                  <input
-                    type="text"
-                    value={searchQuery || ""}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder={t?.ui?.searchAgain || "Cari lagi..."}
-                    className="h-12 w-full rounded-2xl border-0 bg-transparent pl-12 pr-3 text-sm font-semibold text-slate-950 outline-none dark:text-white"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsAdvSearchOpen(!isAdvSearchOpen)}
-                  className={`inline-flex h-12 items-center justify-center px-4 transition ${
-                    isAdvSearchOpen
-                      ? "text-blue-700 dark:text-blue-300"
-                      : "text-slate-500 hover:text-blue-700 dark:text-slate-400 dark:hover:text-blue-300"
-                  }`}
-                  title={t?.advancedSearch || "Pencarian Spesifik"}
-                >
-                  <SlidersHorizontal className="h-5 w-5" />
-                </button>
-
-                <button
-                  type="submit"
-                  className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-700 px-7 text-sm font-black text-white transition hover:bg-blue-800 sm:rounded-full"
-                >
-                  {t?.ui?.searchBtn || "Cari"}
-                </button>
-              </div>
-            </form>
-
-            {isAdvSearchOpen && (
-              <div className="absolute right-0 top-[110%] z-50 w-full">
-                <AdvancedSearchPanel
-                  t={t}
-                  advSearch={safeAdvSearch}
-                  setAdvSearch={setAdvSearch}
-                  onClose={() => setIsAdvSearchOpen(false)}
-                  onApply={(event) =>
-                    handleSearchSubmit(event || { preventDefault() {} })
-                  }
-                  onReset={resetFilters}
-                />
-              </div>
-            )}
-          </div>
+            <button
+              type="submit"
+              className="m-1.5 rounded-[22px] bg-blue-700 px-6 text-sm font-black text-white transition hover:bg-blue-800"
+            >
+              {t?.ui?.searchBtn || "Cari"}
+            </button>
+          </form>
         </div>
 
-        {/* Result Header */}
-        <div className="mb-8 border-b border-slate-200 pb-6 dark:border-white/10">
+        {isAdvSearchOpen && (
+          <div className="mb-8">
+            <AdvancedSearchPanel
+              t={t}
+              advSearch={advSearch}
+              setAdvSearch={setAdvSearch}
+              onClose={() => setIsAdvSearchOpen(false)}
+              onApply={handleSearchSubmit}
+              onReset={resetFilters}
+            />
+          </div>
+        )}
+
+        <section className="mb-8 border-b border-slate-200 pb-7 dark:border-white/10">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white md:text-4xl">
+              <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white md:text-4xl">
                 {t?.ui?.searchResults || "Hasil Pencarian"}
-              </h2>
+              </h1>
 
               <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-400">
                 {t?.ui?.found || "Ditemukan"}{" "}
-                <strong className="text-blue-700 dark:text-blue-300">
-                  {filteredData.length}
-                </strong>{" "}
+                <span className="font-black text-blue-700 dark:text-blue-300">
+                  {total}
+                </span>{" "}
                 {t?.ui?.collections || "koleksi"}
-                {searchQuery && (
+                {searchQuery?.trim() ? (
                   <>
                     {" "}
                     {t?.ui?.forKeyword || "untuk kata kunci"}{" "}
-                    <strong className="text-slate-950 dark:text-white">
-                      "{searchQuery}"
-                    </strong>
+                    <span className="font-black text-slate-950 dark:text-white">
+                      &quot;{searchQuery.trim()}&quot;
+                    </span>
                   </>
-                )}
-                {selectedSubject !== "Semua" && (
+                ) : null}
+                {selectedSubject !== "Semua" ? (
                   <>
                     {" "}
                     {t?.ui?.onSubject || "pada subjek"}{" "}
-                    <strong className="text-slate-950 dark:text-white">
-                      {selectedSubjectName}
-                    </strong>
-                  </>
-                )}
-                {selectedYear !== "Semua" && (
-                  <>
-                    {" "}
-                    <span>
-                      | {t?.ui?.yearFilter || "Tahun:"}{" "}
-                      <strong className="text-slate-950 dark:text-white">
-                        {selectedYear}
-                      </strong>
+                    <span className="font-black text-slate-950 dark:text-white">
+                      {selectedSubject}
                     </span>
                   </>
-                )}
-                {supervisorInputValue && (
-                  <>
-                    {" "}
-                    <span>
-                      |{" "}
-                      {t?.ui?.supervisorActiveLabel ||
-                        t?.ui?.supervisorFilter ||
-                        "Dosen Pembimbing:"}{" "}
-                      <strong className="text-slate-950 dark:text-white">
-                        {supervisorInputValue}
-                      </strong>
-                    </span>
-                  </>
-                )}
-                {hasAdvancedFilter && (
-                  <> {t?.ui?.withFilter || "(dengan filter spesifik)"}</>
-                )}
+                ) : null}
               </p>
             </div>
 
-            {/* Filter Group */}
-            <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-              {/* Filter Tahun */}
-              <div className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/5 sm:w-auto">
-                <label
-                  htmlFor="year-filter"
-                  className="flex shrink-0 items-center gap-2 text-sm font-black text-slate-500 dark:text-slate-400"
-                >
-                  <Calendar className="h-4 w-4" />
-                  <span>{t?.ui?.yearFilter || "Tahun:"}</span>
-                </label>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <label className="flex min-h-[54px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <Calendar className="h-5 w-5 text-slate-400" />
+                <span className="text-sm font-black text-slate-500 dark:text-slate-300">
+                  {t?.ui?.yearFilter || "Tahun:"}
+                </span>
 
                 <select
-                  id="year-filter"
-                  value={selectedYear || "Semua"}
-                  onChange={(event) => {
-                    setSelectedYear(event.target.value);
-                  }}
-                  className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-sm font-black text-slate-950 outline-none focus:ring-0 dark:text-white"
+                  value={selectedYear}
+                  onChange={(event) => setSelectedYear(event.target.value)}
+                  className="min-w-[130px] border-0 bg-transparent text-sm font-black text-slate-950 outline-none focus:ring-0 dark:text-white"
                 >
                   <option value="Semua">
                     {t?.ui?.allYears || "Semua Tahun"}
                   </option>
 
-                  {yearOptions.map((year) => (
+                  {availableYears.map((year) => (
                     <option key={year} value={year}>
                       {year}
                     </option>
                   ))}
                 </select>
-              </div>
+              </label>
 
-              {/* Search Dosen Pembimbing */}
-              <div className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:ring-2 focus-within:ring-blue-300 dark:border-white/10 dark:bg-white/5 sm:w-[390px]">
-                <label
-                  htmlFor="supervisor-search"
-                  className="flex shrink-0 items-center gap-2 text-sm font-black text-slate-500 dark:text-slate-400"
-                >
-                  <UserRound className="h-4 w-4" />
-                  <span>{t?.ui?.supervisorFilter || "Dosen:"}</span>
-                </label>
+              <label className="flex min-h-[54px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <User className="h-5 w-5 text-slate-400" />
+                <span className="text-sm font-black text-slate-500 dark:text-slate-300">
+                  {t?.ui?.supervisorFilter || "Dosen:"}
+                </span>
 
                 <input
-                  id="supervisor-search"
                   type="text"
-                  value={supervisorInputValue}
-                  onChange={(event) => {
-                    setSelectedSupervisor(event.target.value);
-                  }}
+                  value={
+                    selectedSupervisor === "Semua" ? "" : selectedSupervisor
+                  }
+                  onChange={(event) =>
+                    setSelectedSupervisor(event.target.value)
+                  }
                   placeholder={
                     t?.ui?.supervisorSearchPlaceholder ||
                     "Cari dosen pembimbing..."
                   }
-                  className="min-w-0 flex-1 border-0 bg-transparent text-sm font-black text-slate-950 outline-none placeholder:font-semibold placeholder:text-slate-400 focus:ring-0 dark:text-white dark:placeholder:text-slate-500"
+                  className="min-w-[220px] border-0 bg-transparent text-sm font-black text-slate-950 outline-none placeholder:text-slate-400 focus:ring-0 dark:text-white"
                 />
-
-                {supervisorInputValue && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedSupervisor("")}
-                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-800 dark:bg-white/10 dark:text-slate-400 dark:hover:bg-white/15 dark:hover:text-white"
-                    title={
-                      t?.ui?.clearSupervisorFilter || "Hapus filter dosen"
-                    }
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+              </label>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Result Grid */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 md:gap-6 lg:grid-cols-5">
+        <section className="mb-10">
           {currentItems.length > 0 ? (
-            currentItems.map((item, index) => (
-              <CollectionCard
-                key={item.id}
-                item={item}
-                index={index}
-                onSelectItem={onSelectItem}
-              />
-            ))
+            <>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+                {currentItems.map((item, index) => (
+                  <CollectionCard
+                    key={item.id || `${item.judul}-${index}`}
+                    item={item}
+                    index={index}
+                    onSelectItem={onSelectItem}
+                  />
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
+                  {paginationItems.map((page, index) => {
+                    if (page === "...") {
+                      return (
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="flex h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm font-black text-slate-400"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => onPageChange(page)}
+                        className={`flex h-10 min-w-10 items-center justify-center rounded-full px-4 text-sm font-black transition ${
+                          currentPage === page
+                            ? "bg-blue-700 text-white shadow-lg shadow-blue-700/20"
+                            : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           ) : (
-            <div className="col-span-full rounded-[28px] border border-dashed border-slate-300 bg-white px-5 py-16 text-center dark:border-white/10 dark:bg-white/5">
+            <div className="rounded-[28px] border border-dashed border-slate-300 bg-white p-10 text-center dark:border-white/10 dark:bg-white/5">
               <Search className="mx-auto mb-4 h-12 w-12 text-slate-300 dark:text-slate-600" />
 
-              <p className="text-lg font-black text-slate-800 dark:text-white">
+              <h2 className="text-xl font-black text-slate-950 dark:text-white">
                 {t?.noResults || "Tidak ada data yang ditemukan."}
-              </p>
+              </h2>
 
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-7 text-slate-500 dark:text-slate-400">
                 {t?.ui?.tryOther ||
                   "Coba gunakan kata kunci lain atau periksa filter pencarian spesifik Anda."}
               </p>
@@ -303,22 +301,24 @@ export default function SearchPage({
               <button
                 type="button"
                 onClick={resetFilters}
-                className="mt-6 rounded-full bg-blue-700 px-5 py-3 text-sm font-black text-white transition hover:bg-blue-800"
+                className="mt-5 rounded-full bg-blue-700 px-6 py-3 text-sm font-black text-white transition hover:bg-blue-800"
               >
                 {t?.ui?.clearSearch || "Hapus Pencarian & Filter"}
               </button>
             </div>
           )}
+        </section>
+
+        <div className="my-12 flex items-center gap-4">
+          <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+          <span className="rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-[10px] font-black uppercase tracking-[0.24em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-300">
+            Koleksi Buku Perpustakaan
+          </span>
+          <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
         </div>
 
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-          />
-        )}
+        <SlimsResultBox keyword={slimsKeyword} slimsUrl={slimsUrl} />
       </div>
-    </div>
+    </main>
   );
 }
