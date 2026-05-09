@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Briefcase,
   Calculator,
@@ -30,22 +31,25 @@ import Footer from "./Footer";
 
 const ITEMS_PER_PAGE = 10;
 const AUTO_REFRESH_INTERVAL = 30000;
+const SKIP_SPLASH_KEY = "repolib-skip-splash";
 
-export default function RepositoryApp() {
+export default function RepositoryApp({ forceSearchPage = false }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [lang, setLang] = useState("id");
-  const [searchQuery, setSearchQuery] = useState("");
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tourFinished, setTourFinished] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("Semua");
+  const [selectedYear, setSelectedYear] = useState("Semua");
+  const [selectedSupervisor, setSelectedSupervisor] = useState("Semua");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedSubject, setSelectedSubject] = useState("Semua");
-
-  const [showSplash, setShowSplash] = useState(true);
-  const [splashFading, setSplashFading] = useState(false);
-
   const [showAllSubjects, setShowAllSubjects] = useState(false);
-  const [isSearchPage, setIsSearchPage] = useState(false);
+  const [isSearchPage, setIsSearchPage] = useState(forceSearchPage);
   const [isAdvSearchOpen, setIsAdvSearchOpen] = useState(false);
 
   const [advSearch, setAdvSearch] = useState({
@@ -55,12 +59,25 @@ export default function RepositoryApp() {
     dosenPembimbing: "",
   });
 
-  const [selectedYear, setSelectedYear] = useState("Semua");
-  const [selectedSupervisor, setSelectedSupervisor] = useState("Semua");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [showSplash, setShowSplash] = useState(() => {
+    if (forceSearchPage) return false;
+
+    if (typeof window !== "undefined") {
+      return window.sessionStorage.getItem(SKIP_SPLASH_KEY) !== "true";
+    }
+
+    return true;
+  });
+
+  const [splashFading, setSplashFading] = useState(false);
+  const [tourFinished, setTourFinished] = useState(forceSearchPage);
 
   const sliderRef = useRef(null);
   const t = translations[lang];
+
+  const finishTour = useCallback(() => {
+    setTourFinished(true);
+  }, []);
 
   const subjects = useMemo(
     () => [
@@ -110,6 +127,85 @@ export default function RepositoryApp() {
     [t]
   );
 
+  function skipSplashForThisTab() {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(SKIP_SPLASH_KEY, "true");
+    }
+
+    setShowSplash(false);
+    setSplashFading(false);
+  }
+
+  function makeSearchUrl({
+    keyword = "",
+    subject = "Semua",
+    year = "Semua",
+    dosen = "Semua",
+    adv = {
+      nama: "",
+      nim: "",
+      tahun: "",
+      dosenPembimbing: "",
+    },
+  }) {
+    const params = new URLSearchParams();
+
+    if (keyword?.trim()) params.set("keyword", keyword.trim());
+    if (subject && subject !== "Semua") params.set("subject", subject);
+    if (year && year !== "Semua") params.set("year", year);
+    if (dosen && dosen !== "Semua") params.set("dosen", dosen);
+
+    if (adv?.nama?.trim()) params.set("nama", adv.nama.trim());
+    if (adv?.nim?.trim()) params.set("nim", adv.nim.trim());
+    if (adv?.tahun?.trim()) params.set("tahun", adv.tahun.trim());
+    if (adv?.dosenPembimbing?.trim()) {
+      params.set("pembimbing", adv.dosenPembimbing.trim());
+    }
+
+    const query = params.toString();
+    return query ? `/search?${query}` : "/search";
+  }
+
+  useEffect(() => {
+    const keyword = searchParams.get("keyword") || "";
+    const subject = searchParams.get("subject") || "Semua";
+    const year = searchParams.get("year") || "Semua";
+    const dosen = searchParams.get("dosen") || "Semua";
+
+    const nama = searchParams.get("nama") || "";
+    const nim = searchParams.get("nim") || "";
+    const tahun = searchParams.get("tahun") || "";
+    const pembimbing = searchParams.get("pembimbing") || "";
+
+    const hasParams =
+      keyword ||
+      subject !== "Semua" ||
+      year !== "Semua" ||
+      dosen !== "Semua" ||
+      nama ||
+      nim ||
+      tahun ||
+      pembimbing;
+
+    if (forceSearchPage || hasParams) {
+      setSearchQuery(keyword);
+      setSelectedSubject(subject);
+      setSelectedYear(year);
+      setSelectedSupervisor(dosen);
+      setAdvSearch({
+        nama,
+        nim,
+        tahun,
+        dosenPembimbing: pembimbing,
+      });
+
+      setIsSearchPage(true);
+      setCurrentPage(1);
+      skipSplashForThisTab();
+      setTourFinished(true);
+    }
+  }, [forceSearchPage, searchParams]);
+
   useEffect(() => {
     let active = true;
 
@@ -120,21 +216,20 @@ export default function RepositoryApp() {
         if (!active) return;
 
         setData(Array.isArray(items) ? items : []);
-        setLoading(false);
       } catch (error) {
         console.warn("Gagal mengambil data repository:", error);
 
         if (!active) return;
 
-        setLoading(false);
+        setData([]);
+      } finally {
+        if (active) setLoading(false);
       }
     };
 
     loadData();
 
-    const interval = setInterval(() => {
-      loadData();
-    }, AUTO_REFRESH_INTERVAL);
+    const interval = setInterval(loadData, AUTO_REFRESH_INTERVAL);
 
     return () => {
       active = false;
@@ -143,9 +238,20 @@ export default function RepositoryApp() {
   }, []);
 
   useEffect(() => {
-    if (!loading) {
+    if (forceSearchPage || isSearchPage) {
+      skipSplashForThisTab();
+      setTourFinished(true);
+      return undefined;
+    }
+
+    if (!loading && showSplash) {
       const timer1 = setTimeout(() => setSplashFading(true), 900);
-      const timer2 = setTimeout(() => setShowSplash(false), 1300);
+      const timer2 = setTimeout(() => {
+        setShowSplash(false);
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(SKIP_SPLASH_KEY, "true");
+        }
+      }, 1300);
 
       return () => {
         clearTimeout(timer1);
@@ -154,17 +260,14 @@ export default function RepositoryApp() {
     }
 
     return undefined;
-  }, [loading]);
+  }, [loading, forceSearchPage, isSearchPage, showSplash]);
 
   const availableYears = useMemo(() => {
     const years = new Set();
 
     data.forEach((item) => {
       const year = item?.tahun?.trim();
-
-      if (year) {
-        years.add(year);
-      }
+      if (year) years.add(year);
     });
 
     return Array.from(years).sort((a, b) => b.localeCompare(a));
@@ -231,10 +334,10 @@ export default function RepositoryApp() {
     }
 
     if (selectedSupervisor !== "Semua" && selectedSupervisor.trim()) {
-      const supervisorQuery = selectedSupervisor.toLowerCase().trim();
+      const query = selectedSupervisor.toLowerCase().trim();
 
       result = result.filter((item) =>
-        item?.dosenPembimbing?.toLowerCase().includes(supervisorQuery)
+        item?.dosenPembimbing?.toLowerCase().includes(query)
       );
     }
 
@@ -264,15 +367,9 @@ export default function RepositoryApp() {
       if (isPaused) return;
 
       if (slider.scrollLeft + slider.clientWidth >= slider.scrollWidth - 10) {
-        slider.scrollTo({
-          left: 0,
-          behavior: "smooth",
-        });
+        slider.scrollTo({ left: 0, behavior: "smooth" });
       } else {
-        slider.scrollBy({
-          left: 420,
-          behavior: "smooth",
-        });
+        slider.scrollBy({ left: 420, behavior: "smooth" });
       }
     }, 4200);
 
@@ -298,46 +395,86 @@ export default function RepositoryApp() {
     };
   }, [loading, filteredData]);
 
-  function openSearchPage() {
-    const hasAdvSearch =
-      advSearch.nama ||
-      advSearch.nim ||
-      advSearch.tahun ||
-      advSearch.dosenPembimbing;
-
-    if (searchQuery.trim() || selectedSubject !== "Semua" || hasAdvSearch) {
-      setIsSearchPage(true);
-      setCurrentPage(1);
-      setIsAdvSearchOpen(false);
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    }
-  }
-
   function handleSearchSubmit(event) {
     event.preventDefault();
-    openSearchPage();
+
+    const keyword = searchQuery.trim();
+
+    setSelectedSubject("Semua");
+    setSelectedYear("Semua");
+    setSelectedSupervisor("Semua");
+    setAdvSearch({
+      nama: "",
+      nim: "",
+      tahun: "",
+      dosenPembimbing: "",
+    });
+
+    setIsSearchPage(true);
+    setCurrentPage(1);
+    setIsAdvSearchOpen(false);
+    skipSplashForThisTab();
+    setTourFinished(true);
+
+    router.push(
+      makeSearchUrl({
+        keyword,
+        subject: "Semua",
+        year: "Semua",
+        dosen: "Semua",
+        adv: {
+          nama: "",
+          nim: "",
+          tahun: "",
+          dosenPembimbing: "",
+        },
+      })
+    );
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleSubjectSelect(subject) {
+    setSearchQuery("");
     setSelectedSubject(subject);
-    setSelectedSupervisor("Semua");
     setSelectedYear("Semua");
+    setSelectedSupervisor("Semua");
+    setAdvSearch({
+      nama: "",
+      nim: "",
+      tahun: "",
+      dosenPembimbing: "",
+    });
+
     setCurrentPage(1);
     setIsSearchPage(true);
+    skipSplashForThisTab();
+    setTourFinished(true);
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    router.push(
+      makeSearchUrl({
+        keyword: "",
+        subject,
+        year: "Semua",
+        dosen: "Semua",
+        adv: {
+          nama: "",
+          nim: "",
+          tahun: "",
+          dosenPembimbing: "",
+        },
+      })
+    );
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function resetFilters() {
     setSearchQuery("");
     setSelectedSubject("Semua");
+    setSelectedYear("Semua");
+    setSelectedSupervisor("Semua");
+    setCurrentPage(1);
 
     setAdvSearch({
       nama: "",
@@ -346,34 +483,52 @@ export default function RepositoryApp() {
       dosenPembimbing: "",
     });
 
-    setSelectedYear("Semua");
-    setSelectedSupervisor("Semua");
-    setCurrentPage(1);
+    if (isSearchPage || forceSearchPage) {
+      router.replace("/search");
+    }
   }
 
   function handleBackToHome() {
     setIsSearchPage(false);
-    resetFilters();
+    setSearchQuery("");
+    setSelectedSubject("Semua");
+    setSelectedYear("Semua");
+    setSelectedSupervisor("Semua");
+    setCurrentPage(1);
     setIsAdvSearchOpen(false);
+    skipSplashForThisTab();
+    setTourFinished(true);
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
+    setAdvSearch({
+      nama: "",
+      nim: "",
+      tahun: "",
+      dosenPembimbing: "",
     });
+
+    router.push("/");
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handlePageChange(page) {
     setCurrentPage(page);
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleYearFilterChange(value) {
     setSelectedYear(value);
     setCurrentPage(1);
+
+    router.push(
+      makeSearchUrl({
+        keyword: searchQuery,
+        subject: selectedSubject,
+        year: value,
+        dosen: selectedSupervisor,
+        adv: advSearch,
+      })
+    );
   }
 
   function handleSupervisorSearchChange(value) {
@@ -381,6 +536,16 @@ export default function RepositoryApp() {
 
     setSelectedSupervisor(nextValue);
     setCurrentPage(1);
+
+    router.push(
+      makeSearchUrl({
+        keyword: searchQuery,
+        subject: selectedSubject,
+        year: selectedYear,
+        dosen: nextValue,
+        adv: advSearch,
+      })
+    );
   }
 
   function toggleDarkMode() {
@@ -389,7 +554,9 @@ export default function RepositoryApp() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-50">
-      {showSplash && <SplashScreen fading={splashFading} text={t.ui.loading} />}
+      {showSplash && !isSearchPage && !forceSearchPage && (
+        <SplashScreen fading={splashFading} text={t.ui.loading} />
+      )}
 
       <Navbar
         lang={lang}
@@ -399,7 +566,9 @@ export default function RepositoryApp() {
         t={t}
       />
 
-      {!showSplash && <GuidedTour onFinish={() => setTourFinished(true)} />}
+      {!showSplash && !forceSearchPage && !isSearchPage && (
+        <GuidedTour onFinish={finishTour} />
+      )}
 
       <SecurityGuard />
 
@@ -442,6 +611,7 @@ export default function RepositoryApp() {
         ) : (
           <SearchPage
             t={t}
+            loading={loading}
             subjects={subjects}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}

@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import RepositoryApp from "@/components/repository/RepositoryApp";
 
-export default function Home() {
+export default function SearchRoutePage() {
   return (
     <Suspense fallback={null}>
-      <RepositoryApp />
+      <RepositoryApp forceSearchPage />
     </Suspense>
   );
 }
