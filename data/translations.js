@@ -5,7 +5,7 @@ export const translations = {
     badge: "Google Sheet Aktif",
     heroTitle: "Temukan Koleksi Tugas Akhir Mahasiswa dengan Cepat",
     heroDesc:
-      "Cari judul, nama, NIM, program studi, atau tahun terbit dalam tampilan yang nyaman di desktop maupun mobile.",
+      "Telusuri tugas akhir, buku, artikel, penulis, prodi, atau tahun...",
     searchPlaceholder:
       "Masukkan kata kunci judul, nama, NIM, prodi, atau tahun...",
     darkMode: "Mode Gelap",

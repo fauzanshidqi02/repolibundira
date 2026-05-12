@@ -16,6 +16,7 @@ import {
 import { translations } from "@/data/translations";
 import { fetchRepositoryData } from "@/lib/repositoryApi";
 
+import SecurityGuard from "./SecurityGuard";
 import Navbar from "./Navbar";
 import GuidedTour from "./GuidedTour";
 import PrivacyConsent from "./PrivacyConsent";
@@ -562,6 +563,8 @@ export default function RepositoryApp({ forceSearchPage = false }) {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-50">
+      <SecurityGuard />
+
       {showSplash && !isSearchPage && !forceSearchPage && (
         <SplashScreen fading={splashFading} text={t.ui?.loading || "Loading"} />
       )}

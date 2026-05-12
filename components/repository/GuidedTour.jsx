@@ -91,7 +91,7 @@ export default function GuidedTour({ onFinish = () => {} }) {
       {
         title: "Kolom Pencarian",
         description:
-          "Gunakan bagian ini untuk mencari judul tugas akhir, nama mahasiswa, NIM, program studi, atau tahun.",
+          "Telusuri tugas akhir, buku, artikel, penulis, prodi, atau tahun.",
         selector: '[data-tour="search-box"]',
       },
       {

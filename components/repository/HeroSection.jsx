@@ -58,7 +58,7 @@ export default function HeroSection({
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder={
                     hero.searchPlaceholder ||
-                    "Cari judul, nama, NIM, prodi, atau tahun..."
+                    "Telusuri tugas akhir, buku, artikel, penulis, prodi, atau tahun..."
                   }
                   className="w-full bg-transparent text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none md:text-base"
                 />
