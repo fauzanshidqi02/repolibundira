@@ -1,348 +1,313 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { X, ChevronLeft, ChevronRight, MousePointer2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
-const TOUR_STORAGE_KEY = "repolib-tour-seen";
+const TOUR_DONE_KEY = "repolib-tour-done";
+const TOUR_SKIP_SESSION_KEY = "repolib-tour-skip-session";
 
-const steps = [
-  {
-    target: "search",
-    title: "Kolom Pencarian",
-    desc: "Gunakan bagian ini untuk mencari judul, nama mahasiswa, NIM, prodi, atau tahun.",
-  },
-  {
-    target: "advanced",
-    title: "Pencarian Spesifik",
-    desc: "Klik tombol ini untuk pencarian berdasarkan nama, NIM, tahun, atau dosen pembimbing.",
-  },
-  {
-    target: "subject",
-    title: "Telusuri Subjek",
-    desc: "Pilih program studi untuk melihat koleksi tugas akhir sesuai bidangnya.",
-  },
-  {
-    target: "collection",
-    title: "Koleksi Terbaru",
-    desc: "Bagian ini menampilkan koleksi tugas akhir terbaru di repository.",
-  },
-  {
-    target: "stats",
-    title: "Statistik Subjek",
-    desc: "Bagian ini menampilkan jumlah koleksi berdasarkan program studi.",
-  },
-];
+function getVisibleElement(selector) {
+  if (typeof window === "undefined") return null;
+
+  const elements = Array.from(document.querySelectorAll(selector));
+
+  return (
+    elements.find((element) => {
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+
+      return (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        style.opacity !== "0"
+      );
+    }) || null
+  );
+}
+
+function getTargetRect(selector) {
+  const element = getVisibleElement(selector);
+
+  if (!element) return null;
+
+  const rect = element.getBoundingClientRect();
+
+  return {
+    top: rect.top,
+    left: rect.left,
+    width: rect.width,
+    height: rect.height,
+    bottom: rect.bottom,
+    right: rect.right,
+  };
+}
+
+function getTooltipStyle(targetRect) {
+  if (typeof window === "undefined") return {};
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  const cardWidth = viewportWidth < 640 ? viewportWidth - 32 : 380;
+  const cardHeight = 230;
+  const gap = 18;
+
+  if (!targetRect) {
+    return {
+      width: cardWidth,
+      left: "50%",
+      top: "50%",
+      transform: "translate(-50%, -50%)",
+    };
+  }
+
+  let top = targetRect.bottom + gap;
+  let left = targetRect.left;
+
+  if (top + cardHeight > viewportHeight - 16) {
+    top = targetRect.top - cardHeight - gap;
+  }
+
+  if (top < 16) top = 16;
+
+  if (left + cardWidth > viewportWidth - 16) {
+    left = viewportWidth - cardWidth - 16;
+  }
+
+  if (left < 16) left = 16;
+
+  return {
+    width: cardWidth,
+    top,
+    left,
+  };
+}
 
 export default function GuidedTour({ onFinish = () => {} }) {
+  const steps = useMemo(
+    () => [
+      {
+        title: "Kolom Pencarian",
+        description:
+          "Gunakan bagian ini untuk mencari judul tugas akhir, nama mahasiswa, NIM, program studi, atau tahun.",
+        selector: '[data-tour="search-box"]',
+      },
+      {
+        title: "Pencarian Spesifik",
+        description:
+          "Klik ikon filter untuk pencarian yang lebih detail, misalnya berdasarkan nama, NIM, tahun, atau dosen pembimbing.",
+        selector:
+          '[data-tour="advanced-search-button"], [data-tour="advanced-search-mobile-button"]',
+      },
+      {
+        title: "Telusuri Subjek",
+        description:
+          "Bagian ini membantu pengunjung melihat koleksi berdasarkan program studi.",
+        selector: '[data-tour="subject-browser"], #subject-browser',
+      },
+      {
+        title: "Koleksi Terbaru",
+        description:
+          "Di sini pengunjung bisa melihat koleksi tugas akhir yang terbaru atau diperbarui.",
+        selector: '[data-tour="collection-slider"], #collection-slider',
+      },
+      {
+        title: "Statistik Subjek",
+        description:
+          "Bagian ini menampilkan ringkasan jumlah koleksi berdasarkan program studi.",
+        selector: '[data-tour="subject-stats"], #subject-stats',
+      },
+    ],
+    []
+  );
+
+  const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
-  const [rect, setRect] = useState(null);
-  const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [targetRect, setTargetRect] = useState(null);
 
   const currentStep = steps[stepIndex];
 
   useEffect(() => {
     setMounted(true);
 
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const alreadyDone = window.localStorage.getItem(TOUR_DONE_KEY) === "true";
+    const skippedThisSession =
+      window.sessionStorage.getItem(TOUR_SKIP_SESSION_KEY) === "true";
 
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
+    if (!alreadyDone && !skippedThisSession) {
+      const timer = window.setTimeout(() => {
+        setActive(true);
+      }, 500);
 
-    return () => {
-      window.removeEventListener("resize", checkMobile);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    const hasSeenTour = window.localStorage.getItem(TOUR_STORAGE_KEY);
-
-    if (hasSeenTour) {
-      onFinish();
-      return;
+      return () => window.clearTimeout(timer);
     }
 
-    const timer = window.setTimeout(() => {
-      setStepIndex(0);
-      setActive(true);
-      window.localStorage.setItem(TOUR_STORAGE_KEY, "true");
-    }, 800);
+    onFinish();
 
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [mounted, onFinish]);
+    return undefined;
+  }, [onFinish]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!mounted || !active || !currentStep) return undefined;
 
-    const updateRect = () => {
-      const element = document.querySelector(
-        `[data-tour="${currentStep.target}"]`
-      );
+    let timer = null;
 
-      if (!element) {
-        setRect(null);
-        return;
+    function updateTarget() {
+      const element = getVisibleElement(currentStep.selector);
+
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        });
       }
 
-      element.scrollIntoView({
-        behavior: "smooth",
-        block: isMobile ? "start" : "center",
-        inline: "center",
-      });
+      timer = window.setTimeout(() => {
+        setTargetRect(getTargetRect(currentStep.selector));
+      }, 380);
+    }
 
-      window.setTimeout(() => {
-        const box = element.getBoundingClientRect();
+    updateTarget();
 
-        setRect({
-          top: box.top,
-          left: box.left,
-          right: box.right,
-          bottom: box.bottom,
-          width: box.width,
-          height: box.height,
-        });
-      }, 500);
-    };
-
-    updateRect();
-
-    window.addEventListener("resize", updateRect);
-    window.addEventListener("scroll", updateRect, true);
+    window.addEventListener("resize", updateTarget);
+    window.addEventListener("scroll", updateTarget, true);
 
     return () => {
-      window.removeEventListener("resize", updateRect);
-      window.removeEventListener("scroll", updateRect, true);
+      if (timer) window.clearTimeout(timer);
+      window.removeEventListener("resize", updateTarget);
+      window.removeEventListener("scroll", updateTarget, true);
     };
-  }, [active, stepIndex, currentStep.target, isMobile]);
+  }, [mounted, active, currentStep]);
 
-  const tooltipPosition = useMemo(() => {
-    if (!mounted || typeof window === "undefined") {
-      return {
-        top: 120,
-        left: 16,
-      };
-    }
+  if (!mounted || !active) return null;
 
-    const tooltipWidth = 380;
-    const tooltipHeight = 260;
-    const margin = 16;
-    const safeTop = 80;
+  const isLastStep = stepIndex === steps.length - 1;
+  const tooltipStyle = getTooltipStyle(targetRect);
 
-    if (!rect) {
-      return {
-        top: 120,
-        left: margin,
-      };
-    }
-
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-
-    let top = rect.bottom + 24;
-
-    if (spaceBelow >= tooltipHeight + 40) {
-      top = rect.bottom + 24;
-    } else if (spaceAbove >= tooltipHeight + 40) {
-      top = rect.top - tooltipHeight - 24;
-    } else {
-      top = Math.max(safeTop, window.innerHeight - tooltipHeight - margin);
-    }
-
-    top = Math.min(
-      Math.max(top, safeTop),
-      window.innerHeight - tooltipHeight - margin
-    );
-
-    const left = Math.min(
-      Math.max(rect.left, margin),
-      window.innerWidth - tooltipWidth - margin
-    );
-
-    return {
-      top,
-      left,
-    };
-  }, [mounted, rect]);
-
-  const labelPosition = useMemo(() => {
-    if (!mounted || typeof window === "undefined" || !rect) {
-      return {
-        top: 100,
-        left: 16,
-      };
-    }
-
-    const top =
-      rect.top - 48 < 70
-        ? Math.min(rect.bottom + 16, window.innerHeight - 60)
-        : rect.top - 48;
-
-    const left = Math.min(Math.max(rect.left + 8, 16), window.innerWidth - 150);
-
-    return {
-      top,
-      left,
-    };
-  }, [mounted, rect]);
-
-  const highlightStyle = useMemo(() => {
-    if (!mounted || typeof window === "undefined" || !rect) {
-      return {
-        top: 80,
-        left: 8,
-        width: 200,
-        height: 80,
-      };
-    }
-
-    return {
-      top: Math.max(rect.top - 10, 72),
-      left: Math.max(rect.left - 10, 8),
-      width: Math.min(rect.width + 20, window.innerWidth - 16),
-      height: rect.height + 20,
-    };
-  }, [mounted, rect]);
-
-  function nextStep() {
-    if (stepIndex + 1 >= steps.length) {
-      closeTour();
-      return;
-    }
-
-    setStepIndex((prev) => prev + 1);
-  }
-
-  function prevStep() {
-    if (stepIndex === 0) return;
-
-    setStepIndex((prev) => prev - 1);
-  }
-
-  function closeTour() {
+  function closeForNow() {
+    window.sessionStorage.setItem(TOUR_SKIP_SESSION_KEY, "true");
     setActive(false);
-    setStepIndex(0);
-    setRect(null);
     onFinish();
   }
 
-  if (!mounted) return null;
+  function finishTour() {
+    window.localStorage.setItem(TOUR_DONE_KEY, "true");
+    setActive(false);
+    onFinish();
+  }
+
+  function nextStep() {
+    if (isLastStep) {
+      finishTour();
+      return;
+    }
+
+    setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+  }
+
+  function previousStep() {
+    setStepIndex((prev) => Math.max(prev - 1, 0));
+  }
 
   return (
-    <>
-      {active && (
-        <div className="fixed inset-0 z-[999]">
-          <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-[2px]" />
-
-          {rect && (
-            <>
-              <div
-                className="absolute z-[1000] rounded-[24px] border-4 border-blue-400 bg-transparent shadow-[0_0_0_9999px_rgba(2,6,23,0.65),0_0_45px_rgba(59,130,246,1)] transition-all duration-300"
-                style={highlightStyle}
-              />
-
-              {!isMobile && (
-                <div
-                  className="absolute z-[1001] flex items-center gap-2 rounded-full bg-blue-700 px-4 py-2 text-xs font-black text-white shadow-2xl"
-                  style={{
-                    top: labelPosition.top,
-                    left: labelPosition.left,
-                  }}
-                >
-                  <MousePointer2 className="h-4 w-4" />
-                  Bagian ini
-                </div>
-              )}
-            </>
-          )}
+    <div className="fixed inset-0 z-[9999] pointer-events-none">
+      {targetRect ? (
+        <>
+          <div
+            className="absolute rounded-[28px] border-4 border-blue-400 bg-transparent shadow-[0_0_0_9999px_rgba(2,6,23,0.72)] transition-all duration-300"
+            style={{
+              top: targetRect.top - 10,
+              left: targetRect.left - 10,
+              width: targetRect.width + 20,
+              height: targetRect.height + 20,
+            }}
+          />
 
           <div
-            className={
-              isMobile
-                ? "fixed bottom-0 left-0 right-0 z-[1002] rounded-t-[30px] border-t border-white/10 bg-white p-5 shadow-2xl dark:bg-slate-950"
-                : "absolute z-[1002] w-[calc(100vw-2rem)] max-w-sm rounded-[28px] border border-slate-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-slate-950"
-            }
-            style={
-              isMobile
-                ? undefined
-                : {
-                    top: tooltipPosition.top,
-                    left: tooltipPosition.left,
-                  }
-            }
+            className="absolute rounded-full bg-blue-700 px-4 py-2 text-xs font-black text-white shadow-xl"
+            style={{
+              top: Math.max(targetRect.top - 48, 16),
+              left: Math.max(targetRect.left, 16),
+            }}
           >
-            {isMobile && (
-              <div className="mx-auto mb-4 h-1.5 w-14 rounded-full bg-slate-300 dark:bg-white/20" />
-            )}
+            Bagian ini
+          </div>
+        </>
+      ) : (
+        <div className="absolute inset-0 bg-slate-950/75" />
+      )}
 
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">
-                  Panduan REPOLIB
-                </p>
-                <h3 className="mt-1 text-xl font-black text-slate-950 dark:text-white">
-                  {currentStep.title}
-                </h3>
-              </div>
+      <div
+        className="pointer-events-auto absolute rounded-[28px] bg-white p-5 text-slate-950 shadow-2xl"
+        style={tooltipStyle}
+      >
+        <button
+          type="button"
+          onClick={closeForNow}
+          className="absolute right-4 top-4 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-950"
+          aria-label="Tutup panduan"
+        >
+          <X className="h-5 w-5" />
+        </button>
 
-              <button
-                type="button"
-                onClick={closeTour}
-                className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white"
-                aria-label="Tutup panduan"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.28em] text-blue-700">
+          Panduan Repolib
+        </p>
 
-            <p className="text-sm leading-7 text-slate-600 dark:text-slate-400">
-              {currentStep.desc}
-            </p>
+        <h3 className="pr-8 text-xl font-black tracking-tight">
+          {currentStep.title}
+        </h3>
 
-            <div className="mt-5 flex items-center justify-between gap-4">
-              <div className="flex gap-1.5">
-                {steps.map((_, index) => (
-                  <span
-                    key={index}
-                    className={`h-2 rounded-full transition-all ${
-                      index === stepIndex
-                        ? "w-7 bg-blue-700"
-                        : "w-2 bg-slate-300 dark:bg-white/20"
-                    }`}
-                  />
-                ))}
-              </div>
+        <p className="mt-3 text-sm leading-7 text-slate-600">
+          {currentStep.description}
+        </p>
 
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  disabled={stepIndex === 0}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
-                  aria-label="Sebelumnya"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
+        <div className="mt-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            {steps.map((step, index) => (
+              <span
+                key={step.title}
+                className={`h-2 rounded-full transition-all ${
+                  index === stepIndex ? "w-7 bg-blue-700" : "w-2 bg-slate-300"
+                }`}
+              />
+            ))}
+          </div>
 
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="flex h-10 items-center justify-center gap-2 rounded-full bg-blue-700 px-4 text-sm font-black text-white transition hover:bg-blue-800"
-                >
-                  {stepIndex + 1 >= steps.length ? "Selesai" : "Lanjut"}
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={previousStep}
+              disabled={stepIndex === 0}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Sebelumnya"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={nextStep}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-blue-700 px-5 text-sm font-black text-white transition hover:bg-blue-800"
+            >
+              {isLastStep ? "Selesai" : "Lanjut"}
+              <ChevronRight className="h-5 w-5" />
+            </button>
           </div>
         </div>
-      )}
-    </>
+
+        <button
+          type="button"
+          onClick={closeForNow}
+          className="mt-4 text-xs font-black text-slate-500 transition hover:text-blue-700"
+        >
+          Ulangi panduan nanti
+        </button>
+      </div>
+    </div>
   );
 }

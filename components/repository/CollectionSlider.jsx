@@ -1,107 +1,217 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, FileText, User, Calendar, Layers } from "lucide-react";
-import CollectionCard from "./CollectionCard";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Calendar,
+  User,
+  GraduationCap,
+} from "lucide-react";
+
+function safeText(value, fallback = "-") {
+  const text = String(value || "").trim();
+  return text || fallback;
+}
+
+function truncateText(value = "", max = 60) {
+  const text = safeText(value, "");
+
+  if (text.length <= max) return text;
+
+  return `${text.slice(0, max).trim()}...`;
+}
+
+function getCardGradient(index) {
+  const gradients = [
+    "from-blue-900 to-slate-950",
+    "from-violet-900 to-slate-950",
+    "from-emerald-900 to-slate-950",
+    "from-indigo-900 to-slate-950",
+    "from-slate-800 to-slate-950",
+  ];
+
+  return gradients[index % gradients.length];
+}
 
 export default function CollectionSlider({
-  t,
+  t = {},
   loading = false,
   items = [],
-  sliderRef,
+  sliderRef = null,
   onSelectItem = () => {},
 }) {
-  const scrollLeft = () => {
-    if (!sliderRef?.current) return;
+  const collection = t?.collection || {};
 
-    sliderRef.current.scrollBy({
-      left: -420,
+  function scrollSlider(direction) {
+    const slider = sliderRef?.current;
+
+    if (!slider) return;
+
+    slider.scrollBy({
+      left: direction === "left" ? -420 : 420,
       behavior: "smooth",
     });
-  };
-
-  const scrollRight = () => {
-    if (!sliderRef?.current) return;
-
-    sliderRef.current.scrollBy({
-      left: 420,
-      behavior: "smooth",
-    });
-  };
+  }
 
   return (
     <section
-      data-tour="collection"
-      className="relative mb-10 overflow-hidden rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/70 dark:border-white/10 dark:bg-slate-950 dark:shadow-[0_20px_80px_rgba(0,0,0,0.35)] md:p-8"
+      id="collection-slider"
+      data-tour="collection-slider"
+      className="mb-12"
     >
-      <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
-      <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl" />
-
-      <div className="relative z-10 mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-300 md:text-[11px]">
-            <FileText className="h-3.5 w-3.5" />
-            Repository Update
-          </span>
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-blue-700 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-300">
+            <BookOpen className="h-4 w-4" />
+            {collection.badge || "Repository Update"}
+          </div>
 
-          <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950 dark:text-white md:text-4xl">
-            {t?.collectionTitle || "Koleksi Terbaru dan Diperbarui"}
+          <h2 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white md:text-4xl">
+            {collection.title || "Koleksi Terbaru dan Diperbarui"}
           </h2>
 
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-400 md:text-base">
-            {t?.collectionDesc ||
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-400">
+            {collection.description ||
               "Daftar koleksi terbaru yang tersedia di repository."}
           </p>
         </div>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-2 sm:flex">
           <button
             type="button"
-            onClick={scrollLeft}
-            className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+            onClick={() => scrollSlider("left")}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+            aria-label="Geser kiri"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
 
           <button
             type="button"
-            onClick={scrollRight}
-            className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+            onClick={() => scrollSlider("right")}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+            aria-label="Geser kanan"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ArrowRight className="h-5 w-5" />
           </button>
         </div>
       </div>
 
-      <div
-        ref={sliderRef}
-        className="custom-scrollbar relative z-10 flex gap-5 overflow-x-auto scroll-smooth pb-2"
-      >
-        {loading ? (
-          Array.from({ length: 3 }).map((_, index) => (
+      {loading ? (
+        <div className="flex gap-6 overflow-hidden">
+          {Array.from({ length: 4 }).map((_, index) => (
             <div
-              key={index}
-              className="h-[420px] min-w-[320px] animate-pulse rounded-[28px] bg-slate-100 dark:bg-white/5"
+              key={`collection-skeleton-${index}`}
+              className="h-[360px] min-w-[270px] animate-pulse rounded-[24px] bg-slate-200 dark:bg-white/10 sm:min-w-[310px]"
             />
-          ))
-        ) : items.length > 0 ? (
-          items.map((item, index) => (
-            <div key={item.id || index} className="min-w-[320px] max-w-[320px]">
-              <CollectionCard
-                item={item}
-                index={index}
-                onSelectItem={onSelectItem}
-              />
-            </div>
-          ))
-        ) : (
-          <div className="w-full rounded-[24px] border border-dashed border-slate-300 bg-slate-50 p-10 text-center dark:border-white/10 dark:bg-white/5">
-            <FileText className="mx-auto mb-4 h-10 w-10 text-slate-300 dark:text-slate-600" />
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-              {t?.noResults || "Tidak ada data yang ditemukan."}
-            </p>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : items.length > 0 ? (
+        <div
+          ref={sliderRef}
+          className="scrollbar-hide flex snap-x gap-6 overflow-x-auto scroll-smooth pb-3"
+        >
+          {items.map((item, index) => {
+            const title = safeText(item.judul || item.title, "Tanpa Judul");
+            const year = safeText(item.tahun || item.year, "-");
+            const subject = safeText(item.subjek || item.subject, "-");
+            const studentName = safeText(
+              item.nama || item.studentName || item.pengarang,
+              "-"
+            );
+            const supervisor = safeText(
+              item.dosenPembimbing || item.supervisor || item.pembimbing,
+              "-"
+            );
+
+            return (
+              <button
+                key={item.id || `${title}-${index}`}
+                type="button"
+                onClick={() => onSelectItem(item)}
+                className="group min-w-[270px] snap-start overflow-hidden rounded-[24px] border border-slate-200 bg-white text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/5 sm:min-w-[310px]"
+              >
+                <div
+                  className={`flex h-[220px] flex-col items-center justify-between bg-gradient-to-br ${getCardGradient(
+                    index
+                  )} p-6 text-center text-white`}
+                >
+                  <p className="text-xs font-black tracking-[0.35em] text-white/80">
+                    {year}
+                  </p>
+
+                  <div>
+                    <h3 className="text-lg font-black uppercase leading-snug tracking-wide">
+                      {truncateText(title, 88)}
+                    </h3>
+
+                    <div className="mx-auto my-5 h-px w-16 bg-white/40" />
+
+                    <p className="text-sm font-black text-white/85">
+                      {truncateText(studentName, 32)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-5">
+                  <h3 className="line-clamp-2 text-lg font-black leading-snug text-slate-950 dark:text-white">
+                    {truncateText(title, 58)}
+                  </h3>
+
+                  <div className="mt-4 space-y-3">
+                    <InfoLine
+                      icon={<User className="h-4 w-4" />}
+                      text={truncateText(studentName, 36)}
+                    />
+
+                    <InfoLine
+                      icon={<GraduationCap className="h-4 w-4" />}
+                      text={truncateText(supervisor, 36)}
+                    />
+
+                    <InfoLine
+                      icon={<Calendar className="h-4 w-4" />}
+                      text={year}
+                    />
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-between">
+                    <span className="rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-700 dark:bg-white/10 dark:text-slate-200">
+                      {subject}
+                    </span>
+
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100 transition group-hover:bg-blue-700 group-hover:text-white dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-400/20">
+                      <ArrowRight className="h-5 w-5" />
+                    </span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-10 text-center dark:border-white/10 dark:bg-white/5">
+          <BookOpen className="mx-auto mb-4 h-12 w-12 text-slate-300 dark:text-slate-600" />
+
+          <h3 className="text-lg font-black text-slate-950 dark:text-white">
+            Belum ada koleksi yang dapat ditampilkan.
+          </h3>
+
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Data akan tampil setelah repository berhasil dimuat.
+          </p>
+        </div>
+      )}
     </section>
+  );
+}
+
+function InfoLine({ icon, text }) {
+  return (
+    <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400">
+      <span className="text-slate-400">{icon}</span>
+      <span>{text}</span>
+    </div>
   );
 }

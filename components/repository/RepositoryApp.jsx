@@ -17,7 +17,6 @@ import { translations } from "@/data/translations";
 import { fetchRepositoryData } from "@/lib/repositoryApi";
 
 import Navbar from "./Navbar";
-import SecurityGuard from "./SecurityGuard";
 import GuidedTour from "./GuidedTour";
 import PrivacyConsent from "./PrivacyConsent";
 import SplashScreen from "./SplashScreen";
@@ -36,6 +35,8 @@ const SKIP_SPLASH_KEY = "repolib-skip-splash";
 export default function RepositoryApp({ forceSearchPage = false }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [mounted, setMounted] = useState(false);
 
   const [lang, setLang] = useState("id");
   const [data, setData] = useState([]);
@@ -59,21 +60,21 @@ export default function RepositoryApp({ forceSearchPage = false }) {
     dosenPembimbing: "",
   });
 
-  const [showSplash, setShowSplash] = useState(() => {
-    if (forceSearchPage) return false;
-
-    if (typeof window !== "undefined") {
-      return window.sessionStorage.getItem(SKIP_SPLASH_KEY) !== "true";
-    }
-
-    return true;
-  });
-
+  const [showSplash, setShowSplash] = useState(false);
   const [splashFading, setSplashFading] = useState(false);
   const [tourFinished, setTourFinished] = useState(forceSearchPage);
 
   const sliderRef = useRef(null);
-  const t = translations[lang];
+  const t = translations[lang] || translations.id;
+
+  useEffect(() => {
+    const shouldSkipSplash =
+      forceSearchPage ||
+      window.sessionStorage.getItem(SKIP_SPLASH_KEY) === "true";
+
+    setShowSplash(!shouldSkipSplash);
+    setMounted(true);
+  }, [forceSearchPage]);
 
   const finishTour = useCallback(() => {
     setTourFinished(true);
@@ -83,44 +84,44 @@ export default function RepositoryApp({ forceSearchPage = false }) {
     () => [
       {
         value: "Akuntansi",
-        name: t.subjectsList.akuntansi,
+        name: t.subjectsList?.akuntansi || "Akuntansi",
         icon: <Calculator className="h-8 w-8 text-rose-500" />,
       },
       {
         value: "Manajemen",
-        name: t.subjectsList.manajemen,
+        name: t.subjectsList?.manajemen || "Manajemen",
         icon: <Briefcase className="h-8 w-8 text-blue-500" />,
       },
       {
         value: "Ilmu Komunikasi",
-        name: t.subjectsList.komunikasi,
+        name: t.subjectsList?.komunikasi || "Ilmu Komunikasi",
         icon: <MessageCircle className="h-8 w-8 text-emerald-500" />,
       },
       {
         value: "Sastra Inggris",
-        name: t.subjectsList.sastra,
+        name: t.subjectsList?.sastra || "Sastra Inggris",
         icon: <BookType className="h-8 w-8 text-orange-500" />,
       },
       {
         value: "Teknik Informatika",
-        name: t.subjectsList.informatika,
+        name: t.subjectsList?.informatika || "Teknik Informatika",
         icon: <Monitor className="h-8 w-8 text-indigo-500" />,
       },
       {
         value: "Teknik Elektro",
-        name: t.subjectsList.elektro,
+        name: t.subjectsList?.elektro || "Teknik Elektro",
         icon: <Zap className="h-8 w-8 text-amber-500" />,
       },
       {
         value: "Teknik Mesin",
-        name: t.subjectsList.mesin,
+        name: t.subjectsList?.mesin || "Teknik Mesin",
         icon: (
           <Settings className="h-8 w-8 text-slate-500 dark:text-slate-300" />
         ),
       },
       {
         value: "Teknik Sipil",
-        name: t.subjectsList.sipil,
+        name: t.subjectsList?.sipil || "Teknik Sipil",
         icon: <Building className="h-8 w-8 text-teal-600" />,
       },
     ],
@@ -128,10 +129,7 @@ export default function RepositoryApp({ forceSearchPage = false }) {
   );
 
   function skipSplashForThisTab() {
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem(SKIP_SPLASH_KEY, "true");
-    }
-
+    window.sessionStorage.setItem(SKIP_SPLASH_KEY, "true");
     setShowSplash(false);
     setSplashFading(false);
   }
@@ -167,6 +165,8 @@ export default function RepositoryApp({ forceSearchPage = false }) {
   }
 
   useEffect(() => {
+    if (!mounted) return;
+
     const keyword = searchParams.get("keyword") || "";
     const subject = searchParams.get("subject") || "Semua";
     const year = searchParams.get("year") || "Semua";
@@ -204,9 +204,11 @@ export default function RepositoryApp({ forceSearchPage = false }) {
       skipSplashForThisTab();
       setTourFinished(true);
     }
-  }, [forceSearchPage, searchParams]);
+  }, [forceSearchPage, mounted, searchParams]);
 
   useEffect(() => {
+    if (!mounted) return;
+
     let active = true;
 
     const loadData = async () => {
@@ -235,9 +237,11 @@ export default function RepositoryApp({ forceSearchPage = false }) {
       active = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [mounted]);
 
   useEffect(() => {
+    if (!mounted) return;
+
     if (forceSearchPage || isSearchPage) {
       skipSplashForThisTab();
       setTourFinished(true);
@@ -248,9 +252,7 @@ export default function RepositoryApp({ forceSearchPage = false }) {
       const timer1 = setTimeout(() => setSplashFading(true), 900);
       const timer2 = setTimeout(() => {
         setShowSplash(false);
-        if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(SKIP_SPLASH_KEY, "true");
-        }
+        window.sessionStorage.setItem(SKIP_SPLASH_KEY, "true");
       }, 1300);
 
       return () => {
@@ -260,7 +262,7 @@ export default function RepositoryApp({ forceSearchPage = false }) {
     }
 
     return undefined;
-  }, [loading, forceSearchPage, isSearchPage, showSplash]);
+  }, [loading, forceSearchPage, isSearchPage, showSplash, mounted]);
 
   const availableYears = useMemo(() => {
     const years = new Set();
@@ -357,6 +359,8 @@ export default function RepositoryApp({ forceSearchPage = false }) {
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
   useEffect(() => {
+    if (!mounted) return undefined;
+
     const slider = sliderRef.current;
 
     if (!slider || loading) return undefined;
@@ -393,7 +397,7 @@ export default function RepositoryApp({ forceSearchPage = false }) {
       slider.removeEventListener("touchstart", pause);
       slider.removeEventListener("touchend", resume);
     };
-  }, [loading, filteredData]);
+  }, [loading, filteredData, mounted]);
 
   function handleSearchSubmit(event) {
     event.preventDefault();
@@ -552,10 +556,14 @@ export default function RepositoryApp({ forceSearchPage = false }) {
     document.documentElement.classList.toggle("dark");
   }
 
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-50">
       {showSplash && !isSearchPage && !forceSearchPage && (
-        <SplashScreen fading={splashFading} text={t.ui.loading} />
+        <SplashScreen fading={splashFading} text={t.ui?.loading || "Loading"} />
       )}
 
       <Navbar
@@ -569,8 +577,6 @@ export default function RepositoryApp({ forceSearchPage = false }) {
       {!showSplash && !forceSearchPage && !isSearchPage && (
         <GuidedTour onFinish={finishTour} />
       )}
-
-      <SecurityGuard />
 
       <div className="pt-16 md:pt-20">
         {!isSearchPage ? (
